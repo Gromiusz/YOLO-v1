@@ -2,7 +2,7 @@ import os
 import shutil
 
 
-def copy_lines_starting_with_small_numbers(labels_folder, class_number, class_counts=50):
+def copy_lines_starting_with_small_numbers(labels_folder, class_number, class_counts=150):
     ''' Funkcja wyszukuje odpowiednie klasy a następnie tworzy nowe pliki labels zawierające tylko założoną ilość klas'''
     class_count = {i: 0 for i in range(class_number)} # słownik zliczeń klas
     for file_name in os.listdir(labels_folder):
@@ -27,7 +27,7 @@ def copy_lines_starting_with_small_numbers(labels_folder, class_number, class_co
                             with open(os.path.join("labels", file_name), "a") as new_file: # Tworzy plik o tej samej nazwie w folderze labels i wkleja skopiowane linie
                                 new_file.write(line)
 
-            print(f"\rClass counts: {class_count}", end='', flush=True)
+            print(f"\rClass counts: {class_count}", end='', flush=True)  # Wyświetl aktualne zliczenia klas
     return class_count
 
 def copy_images():
@@ -46,7 +46,7 @@ def main():
     os.makedirs("labels", exist_ok=True)
 
     print("Copiyng files with 10 first classes...")
-    class_count = copy_lines_starting_with_small_numbers("labels_ori", class_number=20)
+    class_count = copy_lines_starting_with_small_numbers("labels_prep50", class_number=50)
     print("Processing completed")
 
     print("\nClass counts:", class_count)
