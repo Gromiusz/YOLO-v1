@@ -6,7 +6,7 @@ from PIL import Image
 
 class TrafficSignsDataset(torch.utils.data.Dataset):
     def __init__(
-        self, csv_file, img_dir, label_dir, S=7, B=2, C=20, transform=None,
+        self, csv_file, img_dir, label_dir, S=7, B=2, C=50, transform=None, # Zmieniono na C=50
     ):
         self.annotations = pd.read_csv(csv_file)
         self.img_dir = img_dir
@@ -25,8 +25,6 @@ class TrafficSignsDataset(torch.utils.data.Dataset):
         with open(label_path) as f:
             for label in f.readlines():
                 class_label, x, y, width, height = [
-                    # float(x) if float(x) != int(float(x)) else int(x)
-                    # for x in label.replace("\n", "").split()
                     float(x) if '.' in x else int(x)
                     for x in label.replace("\n", "").split()
                 ]
@@ -38,7 +36,6 @@ class TrafficSignsDataset(torch.utils.data.Dataset):
         boxes = torch.tensor(boxes)
 
         if self.transform:
-            # image = self.transform(image)
             image, boxes = self.transform(image, boxes)
 
         label_matrix = torch.zeros((self.S, self.S, self.C + 5 * self.B))
@@ -54,13 +51,13 @@ class TrafficSignsDataset(torch.utils.data.Dataset):
                 height * self.S,
             )
 
-            if label_matrix[i, j, 20] == 0:
-                label_matrix[i, j, 20] = 1
+            if label_matrix[i, j, self.C] == 0:  # Zmieniono na self.C
+                label_matrix[i, j, self.C] = 1  # Zmieniono na self.C
                 box_coordinates = torch.tensor(
                     [x_cell, y_cell, width_cell, height_cell]
                 )
 
-                label_matrix[i, j, 21:25] = box_coordinates
+                label_matrix[i, j, self.C+1:self.C+5] = box_coordinates  # Zmieniono na self.C+1:self.C+5
 
                 label_matrix[i, j, class_label] = 1
 
