@@ -28,17 +28,19 @@ def process_file(filepath, label_map, next_label):
     return new_lines, next_label
 
 def main():
-    ensure_directory('labels_prep50')
+    labels_prep_ = 'labels_prep50'
+    labels_ori = 'labels_ori'
+    ensure_directory('%s' % labels_prep_)
 
     label_map = {}
     next_label = 0
 
-    files = sorted([f for f in os.listdir('labels_ori') if f.endswith('.txt')])
+    files = sorted([f for f in os.listdir(labels_ori) if f.endswith('.txt')])
     total_files = len(files)
 
     for index, filename in enumerate(files):
-        input_filepath = os.path.join('labels_ori', filename)
-        output_filepath = os.path.join('labels_prep50', filename)
+        input_filepath = os.path.join(labels_ori, filename)
+        output_filepath = os.path.join('%s' % labels_prep_, filename)
 
         new_lines, next_label = process_file(input_filepath, label_map, next_label)
         write_file(output_filepath, new_lines)
