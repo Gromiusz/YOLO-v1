@@ -137,32 +137,63 @@ def mean_average_precision(
 
     return sum(average_precisions) / len(average_precisions)
 
-
 def plot_image(image, boxes):
-    """Plots predicted bounding boxes on the image"""
+    """
+    Plots predicted bounding boxes on the image along with class labels.
+    'boxes' should be a list of elements, each containing:
+        [class_label, confidence, x_center, y_center, width, height]
+    All box dimensions are assumed to be normalized to the range [0, 1].
+    """
     im = np.array(image)
     height, width, _ = im.shape
 
     fig, ax = plt.subplots(1)
     ax.imshow(im)
 
-
     for box in boxes:
-        box = box[2:]
-        assert len(box) == 4, "Got more values than in x, y, w, h, in a box!"
-        upper_left_x = box[0] - box[2] / 2
-        upper_left_y = box[1] - box[3] / 2
-        rect = patches.Rectangle(
-            (upper_left_x * width, upper_left_y * height),
-            box[2] * width,
-            box[3] * height,
-            linewidth=1,
-            edgecolor="r",
-            facecolor="none",
-        )
+        class_label, confidence, x_center, y_center, box_width, box_height = box
+        print(box)
+        # Convert from center coordinates to upper left coordinates
+        upper_left_x = (x_center - box_width / 2) * width
+        upper_left_y = (y_center - box_height / 2) * height
+        rect_width = box_width * width
+        rect_height = box_height * height
+
+        # Create rectangle patch
+        rect = patches.Rectangle((upper_left_x, upper_left_y), rect_width, rect_height, linewidth=1, edgecolor='r', facecolor='none')
         ax.add_patch(rect)
 
+        # Place a text label
+        label_text = f"{class_label} ({confidence:.2f})"
+        ax.text(upper_left_x, upper_left_y, label_text, color='white', fontsize=8, verticalalignment='top', bbox=dict(facecolor='red', alpha=0.5))
+
     plt.show()
+
+# def plot_image(image, boxes):
+#     """Plots predicted bounding boxes on the image"""
+#     im = np.array(image)
+#     height, width, _ = im.shape
+#
+#     fig, ax = plt.subplots(1)
+#     ax.imshow(im)
+#
+#
+#     for box in boxes:
+#         box = box[2:]
+#         assert len(box) == 4, "Got more values than in x, y, w, h, in a box!"
+#         upper_left_x = box[0] - box[2] / 2
+#         upper_left_y = box[1] - box[3] / 2
+#         rect = patches.Rectangle(
+#             (upper_left_x * width, upper_left_y * height),
+#             box[2] * width,
+#             box[3] * height,
+#             linewidth=1,
+#             edgecolor="r",
+#             facecolor="none",
+#         )
+#         ax.add_patch(rect)
+#
+#     plt.show()
 
 def get_bboxes(
     loader,
