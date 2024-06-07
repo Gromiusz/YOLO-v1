@@ -34,10 +34,12 @@ EPOCHS = 10
 NUM_WORKERS = 2
 PIN_MEMORY = True
 LOAD_MODEL = True
-TEST_MODEL = False
+TEST_MODEL = True
 LOAD_MODEL_FILE = "overfit.pth.tar"
 IMG_DIR = "data/images"
 LABEL_DIR = "data/labels"
+TEST_IMG_DIR = "test_data/images_test"
+TEST_LABEL_DIR = "test_data/labels_test"
 
 
 class Compose(object):
@@ -109,7 +111,7 @@ def main():
         )
     else:
         test_dataset = TrafficSignsDataset(
-            "data/data_test.csv", transform=transform, img_dir=IMG_DIR, label_dir=LABEL_DIR,
+            "test_data/test_data.csv", transform=transform, img_dir=TEST_IMG_DIR, label_dir=TEST_LABEL_DIR,
         )
         print("Loading testing dataset...\n")
         test_loader = DataLoader(
