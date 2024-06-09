@@ -87,7 +87,7 @@ def main():
     loss_fn = YoloLoss()
 
     if LOAD_MODEL or TEST_MODEL:
-        load_checkpoint(torch.load(LOAD_MODEL_FILE, map_location=torch.device('cpu')), model, optimizer)
+        load_checkpoint(torch.load(LOAD_MODEL_FILE), model, optimizer)
 
     if not TEST_MODEL:
         train_dataset = TrafficSignsDataset(
