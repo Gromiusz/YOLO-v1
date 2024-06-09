@@ -37,7 +37,7 @@ def visualize_bounding_boxes(image_path, label_path, class_number, displayed_cla
     plt.show()
 
 def main():
-    images_folder = "images_ori"
+    images_folder = "images"
     labels_folder = "labels"
     label_files = os.listdir(labels_folder)
 
