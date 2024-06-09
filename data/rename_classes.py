@@ -13,6 +13,11 @@ def write_file(filepath, lines):
     with open(filepath, 'w') as file:
         file.writelines(lines)
 
+def save_label_map(label_map, filepath):
+    with open(filepath, 'w') as file:
+        for original_label, new_label in label_map.items():
+            file.write(f"{original_label} {new_label}\n")
+
 def process_file(filepath, label_map, next_label):
     lines = read_file(filepath)
     new_lines = []
@@ -50,6 +55,8 @@ def main():
 
     highest_new_number = next_label - 1
     print(f"The highest new number is {highest_new_number}.")
+
+    save_label_map(label_map, 'label_map.txt')
 
 if __name__ == "__main__":
     main()

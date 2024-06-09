@@ -12,7 +12,7 @@ image_files = os.listdir(images_folder)
 # Pary - nazwa obrazu i pliku tekstowego
 data = [(image_file, image_file.split('.')[0] + '.txt') for image_file in image_files]
 
-csv_filename = "data.csv"
+csv_filename = "data_test.csv"
 
 with open(csv_filename, mode='w', newline='') as file:
     writer = csv.writer(file)

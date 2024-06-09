@@ -33,8 +33,8 @@ WEIGHT_DECAY = 0
 EPOCHS = 10
 NUM_WORKERS = 2
 PIN_MEMORY = True
-LOAD_MODEL = True
-TEST_MODEL = True
+LOAD_MODEL = False
+TEST_MODEL = False
 LOAD_MODEL_FILE = "overfit.pth.tar"
 IMG_DIR = "data/images"
 LABEL_DIR = "data/labels"
@@ -76,22 +76,18 @@ def train_fn(train_loader, model, optimizer, loss_fn):
 
 
 def main():
+
+    print("Creating model ...\n")
     model = Yolov1(split_size=7, num_boxes=2, num_classes=50).to(DEVICE)  # Zmienione na 50 klas
     optimizer = optim.Adam(
     model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY
     )
 
-    if not LOAD_MODEL and not TEST_MODEL:
-        print("Creating model ...\n")
-    else:
-        load_checkpoint(torch.load(LOAD_MODEL_FILE), model, optimizer)
-
     print("Initialization loss function...\n")
     loss_fn = YoloLoss()
 
-
     if LOAD_MODEL or TEST_MODEL:
-        load_checkpoint(torch.load(LOAD_MODEL_FILE), model, optimizer)
+        load_checkpoint(torch.load(LOAD_MODEL_FILE, map_location=torch.device('cpu')), model, optimizer)
 
     if not TEST_MODEL:
         train_dataset = TrafficSignsDataset(
@@ -130,9 +126,11 @@ def main():
             print("No training, loading model ...")
             for x, y in test_loader:
                 x = x.to(DEVICE)
-                for idx in range(8):
-                    bboxes = cellboxes_to_boxes(model(x))
-                    bboxes = non_max_suppression(bboxes[idx], iou_threshold=0.5, threshold=0.4, box_format="midpoint")
+                for idx in range(BATCH_SIZE):  # Assuming the batch size can vary
+                    bboxes = cellboxes_to_boxes(model(x[idx].unsqueeze(0)))  # Process one image at a time
+                    bboxes = non_max_suppression(bboxes[0], iou_threshold=0.5, threshold=0.4, box_format="midpoint")
+                    # Convert tensor outputs to list and adjust dimensions for plotting
+                    bboxes = [[bbox[0], bbox[1], bbox[2], bbox[3], bbox[4], bbox[5]] for bbox in bboxes]
                     plot_image(x[idx].permute(1, 2, 0).to("cpu"), bboxes)
 
             import sys
