@@ -30,7 +30,7 @@ LEARNING_RATE = 2e-5
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 BATCH_SIZE = 8  # 16 # 64
 WEIGHT_DECAY = 0
-EPOCHS = 1000
+EPOCHS = 10
 NUM_WORKERS = 2
 PIN_MEMORY = True
 LOAD_MODEL = False
@@ -38,6 +38,8 @@ TEST_MODEL = False
 LOAD_MODEL_FILE = "overfit.pth.tar"
 IMG_DIR = "data/images"
 LABEL_DIR = "data/labels"
+TEST_IMG_DIR = "test_data/images_test"
+TEST_LABEL_DIR = "test_data/labels_test"
 
 
 class Compose(object):
@@ -74,11 +76,11 @@ def train_fn(train_loader, model, optimizer, loss_fn):
 
 
 def main():
-    # if not LOAD_MODEL and not TEST_MODEL:
+
     print("Creating model ...\n")
     model = Yolov1(split_size=7, num_boxes=2, num_classes=50).to(DEVICE)  # Zmienione na 50 klas
     optimizer = optim.Adam(
-        model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY
+    model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY
     )
 
     print("Initialization loss function...\n")
@@ -105,7 +107,7 @@ def main():
         )
     else:
         test_dataset = TrafficSignsDataset(
-            "data/data_test.csv", transform=transform, img_dir=IMG_DIR, label_dir=LABEL_DIR,
+            "test_data/test_data.csv", transform=transform, img_dir=TEST_IMG_DIR, label_dir=TEST_LABEL_DIR,
         )
         print("Loading testing dataset...\n")
         test_loader = DataLoader(
@@ -119,14 +121,11 @@ def main():
 
     print("Starting first epoch...")
     for epoch in range(EPOCHS):
+        print("Epoch " + str(epoch) + "\n")
         if TEST_MODEL:
             print("No training, loading model ...")
             for x, y in test_loader:
                 x = x.to(DEVICE)
-                # for idx in range(8):
-                #     bboxes = cellboxes_to_boxes(model(x))
-                #     bboxes = non_max_suppression(bboxes[idx], iou_threshold=0.5, threshold=0.4, box_format="midpoint")
-                #     plot_image(x[idx].permute(1, 2, 0).to("cpu"), bboxes)
                 for idx in range(BATCH_SIZE):  # Assuming the batch size can vary
                     bboxes = cellboxes_to_boxes(model(x[idx].unsqueeze(0)))  # Process one image at a time
                     bboxes = non_max_suppression(bboxes[0], iou_threshold=0.5, threshold=0.4, box_format="midpoint")

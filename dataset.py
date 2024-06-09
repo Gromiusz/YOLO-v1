@@ -43,7 +43,10 @@ class TrafficSignsDataset(torch.utils.data.Dataset):
             class_label, x, y, width, height = box.tolist()
             class_label = int(class_label)
 
+            #i, j = int(self.S * y), int(self.S * x)
             i, j = int(self.S * y), int(self.S * x)
+            i = min(i, self.S - 1)
+            j = min(j, self.S - 1)
             x_cell, y_cell = self.S * x - j, self.S * y - i
 
             width_cell, height_cell = (
