@@ -34,7 +34,7 @@ EPOCHS = 10
 NUM_WORKERS = 2
 PIN_MEMORY = True
 LOAD_MODEL = False
-TEST_MODEL = False
+TEST_MODEL = True
 LOAD_MODEL_FILE = "overfit.pth.tar"
 IMG_DIR = "data/images"
 LABEL_DIR = "data/labels"
@@ -74,7 +74,64 @@ def train_fn(train_loader, model, optimizer, loss_fn):
 
     print(f"Mean loss was {sum(mean_loss) / len(mean_loss)}")
 
+def precision(tp, fp):
+    if tp + fp == 0:
+        return 0
+    return tp / (tp + fp)
 
+def recall(tp, fn):
+    if tp + fn == 0:
+        return 0
+    return tp / (tp + fn)
+
+def f1_score(prec, rec):
+    if prec + rec == 0:
+        return 0
+    return 2 * (prec * rec) / (prec + rec)
+
+def calculate_statistics(predicted_boxes, true_boxes, iou_threshold):
+    true_positives = 0
+    detected_boxes = []
+    false_positives = len(predicted_boxes)
+
+    for true_box in true_boxes:
+        for pred_box in predicted_boxes:
+            iou = intersection_over_union(torch.tensor(pred_box[2:]), torch.tensor(true_box[1:]))
+            if iou > iou_threshold and pred_box[0] == true_box[0] and pred_box not in detected_boxes:
+                true_positives += 1
+                detected_boxes.append(pred_box)
+                break
+
+    false_positives -= true_positives
+    false_negatives = len(true_boxes) - true_positives
+
+    return true_positives, false_positives, false_negatives
+
+def test_fn(test_loader, model):
+    with torch.no_grad():
+        model.eval()
+        loop = tqdm(test_loader, leave=True)
+        total_true_positives, total_false_positives, total_false_negatives = 0, 0, 0
+
+        for batch_idx, (x, y) in enumerate(loop):
+            x = x.to(DEVICE)
+            predictions = model(x)
+            for idx in range(x.size(0)):
+                predicted_boxes = cellboxes_to_boxes(predictions[idx].unsqueeze(0))
+                predicted_boxes = non_max_suppression(predicted_boxes[0], iou_threshold=0.5, threshold=0.4, box_format="midpoint")
+                true_boxes = cellboxes_to_boxes(y[idx].unsqueeze(0))
+                true_boxes = [[box[0], box[1], box[2], box[3], box[4], box[5]] for box in true_boxes[0]]
+
+                tp, fp, fn = calculate_statistics(predicted_boxes, true_boxes, iou_threshold=0.5)
+                total_true_positives += tp
+                total_false_positives += fp
+                total_false_negatives += fn
+
+        prec = precision(total_true_positives, total_false_positives)
+        rec = recall(total_true_positives, total_false_negatives)
+        f1 = f1_score(prec, rec)
+
+        print(f"Precyzja: {prec:.4f}, Czułość: {rec:.4f}, F1-Score: {f1:.4f}")
 def main():
 
     print("Creating model ...\n")
@@ -118,40 +175,42 @@ def main():
             shuffle=True,
             drop_last=True,
         )
+        print("Loading testing dataset...")
+        test_fn(test_loader, model)
 
-    print("Starting first epoch...")
-    for epoch in range(EPOCHS):
-        print("Epoch " + str(epoch) + "\n")
-        if TEST_MODEL:
-            print("No training, loading model ...")
-            for x, y in test_loader:
-                x = x.to(DEVICE)
-                for idx in range(BATCH_SIZE):  # Assuming the batch size can vary
-                    bboxes = cellboxes_to_boxes(model(x[idx].unsqueeze(0)))  # Process one image at a time
-                    bboxes = non_max_suppression(bboxes[0], iou_threshold=0.5, threshold=0.4, box_format="midpoint")
-                    # Convert tensor outputs to list and adjust dimensions for plotting
-                    bboxes = [[bbox[0], bbox[1], bbox[2], bbox[3], bbox[4], bbox[5]] for bbox in bboxes]
-                    plot_image(x[idx].permute(1, 2, 0).to("cpu"), bboxes)
-
-            import sys
-            sys.exit()
-
-        pred_boxes, target_boxes = get_bboxes(train_loader, model, iou_threshold=0.5, threshold=0.4)
-        mean_avg_prec = mean_average_precision(pred_boxes, target_boxes, iou_threshold=0.5, box_format="midpoint",
-                                               num_classes=50)
-
-        print(f"Train mAP: {mean_avg_prec}")
-
-        if mean_avg_prec > 0.01:
-            checkpoint = {
-                "state_dict": model.state_dict(),
-                "optimizer": optimizer.state_dict(),
-            }
-            save_checkpoint(checkpoint, filename=LOAD_MODEL_FILE)
-            import time
-            time.sleep(10)
-
-        train_fn(train_loader, model, optimizer, loss_fn)
+    # print("Starting first epoch...")
+    # for epoch in range(EPOCHS):
+    #     print("Epoch " + str(epoch) + "\n")
+    #     if TEST_MODEL:
+    #         print("No training, loading model ...")
+    #         for x, y in test_loader:
+    #             x = x.to(DEVICE)
+    #             for idx in range(BATCH_SIZE):  # Assuming the batch size can vary
+    #                 bboxes = cellboxes_to_boxes(model(x[idx].unsqueeze(0)))  # Process one image at a time
+    #                 bboxes = non_max_suppression(bboxes[0], iou_threshold=0.5, threshold=0.4, box_format="midpoint")
+    #                 # Convert tensor outputs to list and adjust dimensions for plotting
+    #                 bboxes = [[bbox[0], bbox[1], bbox[2], bbox[3], bbox[4], bbox[5]] for bbox in bboxes]
+    #                 plot_image(x[idx].permute(1, 2, 0).to("cpu"), bboxes)
+    #
+    #         import sys
+    #         sys.exit()
+    #
+    #     pred_boxes, target_boxes = get_bboxes(train_loader, model, iou_threshold=0.5, threshold=0.4)
+    #     mean_avg_prec = mean_average_precision(pred_boxes, target_boxes, iou_threshold=0.5, box_format="midpoint",
+    #                                            num_classes=50)
+    #
+    #     print(f"Train mAP: {mean_avg_prec}")
+    #
+    #     if mean_avg_prec > 0.01:
+    #         checkpoint = {
+    #             "state_dict": model.state_dict(),
+    #             "optimizer": optimizer.state_dict(),
+    #         }
+    #         save_checkpoint(checkpoint, filename=LOAD_MODEL_FILE)
+    #         import time
+    #         time.sleep(10)
+    #
+    #     train_fn(train_loader, model, optimizer, loss_fn)
 
 
 if __name__ == "__main__":
