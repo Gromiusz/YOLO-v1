@@ -164,7 +164,7 @@ def main():
         )
     else:
         test_dataset = TrafficSignsDataset(
-            "test_data/test_data.csv", transform=transform, img_dir=TEST_IMG_DIR, label_dir=TEST_LABEL_DIR,
+            "test_data/data_test.csv", transform=transform, img_dir=TEST_IMG_DIR, label_dir=TEST_LABEL_DIR,
         )
         print("Loading testing dataset...\n")
         test_loader = DataLoader(
@@ -176,41 +176,41 @@ def main():
             drop_last=True,
         )
         print("Loading testing dataset...")
-        test_fn(test_loader, model)
+        # test_fn(test_loader, model)
 
-    # print("Starting first epoch...")
-    # for epoch in range(EPOCHS):
-    #     print("Epoch " + str(epoch) + "\n")
-    #     if TEST_MODEL:
-    #         print("No training, loading model ...")
-    #         for x, y in test_loader:
-    #             x = x.to(DEVICE)
-    #             for idx in range(BATCH_SIZE):  # Assuming the batch size can vary
-    #                 bboxes = cellboxes_to_boxes(model(x[idx].unsqueeze(0)))  # Process one image at a time
-    #                 bboxes = non_max_suppression(bboxes[0], iou_threshold=0.5, threshold=0.4, box_format="midpoint")
-    #                 # Convert tensor outputs to list and adjust dimensions for plotting
-    #                 bboxes = [[bbox[0], bbox[1], bbox[2], bbox[3], bbox[4], bbox[5]] for bbox in bboxes]
-    #                 plot_image(x[idx].permute(1, 2, 0).to("cpu"), bboxes)
-    #
-    #         import sys
-    #         sys.exit()
-    #
-    #     pred_boxes, target_boxes = get_bboxes(train_loader, model, iou_threshold=0.5, threshold=0.4)
-    #     mean_avg_prec = mean_average_precision(pred_boxes, target_boxes, iou_threshold=0.5, box_format="midpoint",
-    #                                            num_classes=50)
-    #
-    #     print(f"Train mAP: {mean_avg_prec}")
-    #
-    #     if mean_avg_prec > 0.01:
-    #         checkpoint = {
-    #             "state_dict": model.state_dict(),
-    #             "optimizer": optimizer.state_dict(),
-    #         }
-    #         save_checkpoint(checkpoint, filename=LOAD_MODEL_FILE)
-    #         import time
-    #         time.sleep(10)
-    #
-    #     train_fn(train_loader, model, optimizer, loss_fn)
+    print("Starting first epoch...")
+    for epoch in range(EPOCHS):
+        print("Epoch " + str(epoch) + "\n")
+        if TEST_MODEL:
+            print("No training, loading model ...")
+            for x, y in test_loader:
+                x = x.to(DEVICE)
+                for idx in range(BATCH_SIZE):  # Assuming the batch size can vary
+                    bboxes = cellboxes_to_boxes(model(x[idx].unsqueeze(0)))  # Process one image at a time
+                    bboxes = non_max_suppression(bboxes[0], iou_threshold=0.5, threshold=0.4, box_format="midpoint")
+                    # Convert tensor outputs to list and adjust dimensions for plotting
+                    bboxes = [[bbox[0], bbox[1], bbox[2], bbox[3], bbox[4], bbox[5]] for bbox in bboxes]
+                    plot_image(x[idx].permute(1, 2, 0).to("cpu"), bboxes)
+
+            import sys
+            sys.exit()
+
+        pred_boxes, target_boxes = get_bboxes(train_loader, model, iou_threshold=0.5, threshold=0.4)
+        mean_avg_prec = mean_average_precision(pred_boxes, target_boxes, iou_threshold=0.5, box_format="midpoint",
+                                               num_classes=50)
+
+        print(f"Train mAP: {mean_avg_prec}")
+
+        if mean_avg_prec > 0.01:
+            checkpoint = {
+                "state_dict": model.state_dict(),
+                "optimizer": optimizer.state_dict(),
+            }
+            save_checkpoint(checkpoint, filename=LOAD_MODEL_FILE)
+            import time
+            time.sleep(10)
+
+        train_fn(train_loader, model, optimizer, loss_fn)
 
 
 if __name__ == "__main__":

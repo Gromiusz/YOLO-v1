@@ -164,7 +164,7 @@ def plot_image(image, boxes):
         ax.add_patch(rect)
 
         # Place a text label
-        label_text = f"{class_label} ({confidence:.2f})"
+        label_text = f"{class_label}"
         ax.text(upper_left_x, upper_left_y, label_text, color='white', fontsize=8, verticalalignment='top', bbox=dict(facecolor='red', alpha=0.5))
 
     plt.show()
